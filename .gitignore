@@ -7,3 +7,8 @@ env
 ls
 *.egg-info
 .DS_Store
+Pipfile
+Pipfile.lock
+responses
+shifter.egg-info
+files.txt

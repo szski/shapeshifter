@@ -151,76 +151,15 @@ def parseIntroResp(ctx):
             schemaTypes = schema['data']['__schema']['types']
         
         for type in schemaTypes:
-            if type['kind'] == "OBJECT":
-                if type['name'] == "Query":
-                    for field in type['fields']:
-                        for arg in field['args']:
-                            if arg['type']['kind'] == "SCALAR":
-                                if arg['type']['name'] == 'Int':
-                                    createQuery(field['name'], arg['name'], 'Int')
+            if type['kind'] != "OBJECT" and type['name'] != "Query":
+                continue
 
-                                if arg['type']['name'] == 'Float':
-                                    createQuery(field['name'], arg['name'], 'Float')
+            for field in type['fields']:
+                for arg in field['args']:
+                    if arg['type']['kind'] != "SCALAR":
+                        continue
 
-                                if arg['type']['name'] == 'String':
-                                    createQuery(field['name'], arg['name'], 'String')
-
-                                if arg['type']['name'] == 'Boolean':
-                                    createQuery(field['name'], arg['name'], 'Boolean')
-                                
-                                if arg['type']['name'] == 'ID':
-                                    createQuery(field['name'], arg['name'], 'ID')
-
-                                if arg['type']['name'] == 'DateTime':
-                                    createQuery(field['name'], arg['name'], 'DateTime')
-                                
-                                if arg['type']['name'] == 'EmailAddress':
-                                    createQuery(field['name'], arg['name'], 'EmailAddress')  
-
-                                if arg['type']['name'] == 'NegativeFloat':
-                                    createQuery(field['name'], arg['name'], 'NegativeFloat')                                    
-
-                                if arg['type']['name'] == 'NegativeFloat':
-                                    createQuery(field['name'], arg['name'], 'NegativeFloat')                                    
-                                
-                                if arg['type']['name'] == 'NonNegativeFloat':
-                                    createQuery(field['name'], arg['name'], 'NonNegativeFloat') 
-
-                                if arg['type']['name'] == 'NonNegativeInt':
-                                    createQuery(field['name'], arg['name'], 'NonNegativeInt') 
-
-                                if arg['type']['name'] == 'NonPositiveFloat':
-                                    createQuery(field['name'], arg['name'], 'NonPositiveFloat')
-
-                                if arg['type']['name'] == 'NonPositiveInt':
-                                    createQuery(field['name'], arg['name'], 'NonPositiveInt')
-
-                                if arg['type']['name'] == 'PhoneNumber':
-                                    createQuery(field['name'], arg['name'], 'PhoneNumber')
-                                
-                                if arg['type']['name'] == 'PositiveFloat':
-                                    createQuery(field['name'], arg['name'], 'PositiveFloat')
-                                
-                                if arg['type']['name'] == 'PositiveInt':
-                                    createQuery(field['name'], arg['name'], 'PositiveInt')
-
-                                if arg['type']['name'] == 'PostalCode':
-                                    createQuery(field['name'], arg['name'], 'PositiveInt')
-
-                                if arg['type']['name'] == 'UnsignedFloat':
-                                    createQuery(field['name'], arg['name'], 'UnsignedFloat')
-
-                                if arg['type']['name'] == 'UnsignedInt':
-                                    createQuery(field['name'], arg['name'], 'UnsignedInt')
-
-                                if arg['type']['name'] == 'URL':
-                                    createQuery(field['name'], arg['name'], 'URL')
-
-                                if arg['type']['name'] == 'JSON' or arg['type']['name'] == 'JSONObject':
-                                    createQuery(field['name'], arg['name'], 'JSON')
-
-                                if arg['type']['name'] == 'FuzzyDateInt':
-                                    createQuery(field['name'], arg['name'], 'FuzzyDateInt')    
+                    createQuery(field['name'], arg['name'], arg['type']['name'])
     return
 
 @click.pass_context 
@@ -243,7 +182,7 @@ def sendQueries(ctx, proxies):
                     if pr.status_code == 200:
                         click.secho('[RETRY SUCCESS] %s QUERY EXECUTED' % file, fg='green')
 
-def createQuery(field_name,arg_name,scalar):
+def createQuery(field_name, arg_name, scalar):
     if scalar == 'Int':
         query = "{\"query\":\"query{"+field_name+ "(" +arg_name +":"+ genInt() + "){" + arg_name + "}}\",\"variables\":null,\"operationName\":null}"
     
@@ -304,7 +243,7 @@ def createQuery(field_name,arg_name,scalar):
     elif scalar == 'URL':
         query = "{\"query\":\"query{"+field_name+ "(" +arg_name +":"+ genUrl() + "){" + arg_name + "}}\",\"variables\":null,\"operationName\":null}"
     
-    elif scalar == 'JSON':
+    elif scalar == 'JSON' or scalar == "JSONObject:
         query = "{\"query\":\"query{"+field_name+ "(" +arg_name +":"+ genJson() + "){" + arg_name + "}}\",\"variables\":null,\"operationName\":null}"
     
     elif scalar == 'FuzzyDateInt':
@@ -329,11 +268,6 @@ def parseFailedQuery(resp, payload):
                         return retry
     except ValueError:
         click.secho("ERROR PARSING RESPONSE BODY", fg='red')
-
-    
-    
-
-
 
 
 
@@ -391,8 +325,8 @@ def writeFile(ctx, kind, scalar, name, data):
         if e.errno != errno.EEXIST:
             raise
 
-    file = open(parentDir+name+'-'+scalar+".json","x+")
-    file.write(data)
-    file.close()
+    with open(parentDir+name+'-'+scalar+".json","x+") as file:
+        file.write(data)
+
     click.secho('| Request written to: '+kind+'/'+name+'-'+scalar+'.json', fg='green')
     return True
