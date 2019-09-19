@@ -243,7 +243,7 @@ def createQuery(field_name, arg_name, scalar):
     elif scalar == 'URL':
         query = "{\"query\":\"query{"+field_name+ "(" +arg_name +":"+ genUrl() + "){" + arg_name + "}}\",\"variables\":null,\"operationName\":null}"
     
-    elif scalar == 'JSON' or scalar == "JSONObject:
+    elif scalar == 'JSON' or scalar == "JSONObject":
         query = "{\"query\":\"query{"+field_name+ "(" +arg_name +":"+ genJson() + "){" + arg_name + "}}\",\"variables\":null,\"operationName\":null}"
     
     elif scalar == 'FuzzyDateInt':
