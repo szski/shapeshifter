@@ -8,7 +8,8 @@ setup(
         'Click',
         'requests',
         'colorama',
-        'sgqlc'
+        'sgqlc',
+        'python-dateutil'
     ],
     entry_points='''
         [console_scripts]
