@@ -14,7 +14,7 @@ Install deps
 
 Build from Dockerfile
 
-`docker built -t shapeshifter .`
+`docker build -t shapeshifter .`
 
 `docker run -it shapeshifter scan --url example.com:80`
 
