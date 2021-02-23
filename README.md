@@ -11,6 +11,15 @@ Activate venv
 Install deps
 `pip install .`
 
+
+Build from Dockerfile
+
+`docker build -t shapeshifter .`
+
+`docker run -it shapeshifter scan --url example.com:80`
+
+`docker run -it shapeshifter --help`
+
 ```
 shifter --help
 Usage: shifter [OPTIONS] COMMAND [ARGS]...
