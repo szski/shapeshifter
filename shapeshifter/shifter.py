@@ -7,6 +7,7 @@ import json, string
 import random
 import errno
 from datetime import datetime
+from pathlib import Path
 from dateutil.relativedelta import relativedelta
 
 @click.group()
@@ -125,9 +126,10 @@ def scan(ctx, url, proxies):
                 ctx.obj['endpoint'] = endp
                 raw_resp = pr.content
                 click.secho('[SUCCESS] INTROSPECTION QUERY EXECUTED', fg='green')
-                filename = 'responses/introspection-response-%s.json' % str(datetime.now().strftime('%Y_%m_%d_%H_%M_%S'))
-                with open(filename, mode='wb') as localfile:
-                    localfile.write(raw_resp)
+                responses_dir = Path('responses')
+                filename = responses_dir.joinpath('introspection-response-%s.json' % str(datetime.now().strftime('%Y_%m_%d_%H_%M_%S')))
+                responses_dir.mkdir(parents=True, exist_ok=True)  # equivalent to mkdir -p
+                filename.write_bytes(raw_resp)
                 ctx.obj['irespfile'] = filename
                 click.secho('[SAVED] SCHEMA SAVED TO: %s' % ctx.obj['irespfile'], fg='blue')
                 parseIntroResp()
@@ -143,7 +145,7 @@ def parseIntroResp(ctx):
     os.makedirs(outdir, exist_ok=True)
     ctx.obj['outdir'] = outdir
 
-    with open('./'+ctx.obj['irespfile'], "r") as introFile:
+    with open(ctx.obj['irespfile'], "r") as introFile:
         data = introFile.read()
         schema = json.loads(data)
 
@@ -199,7 +201,7 @@ def createQuery(field_name, arg_name, scalar):
         query = "{\"query\":\"query{"+field_name+ "(" +arg_name +":"+ genId() + "){" + arg_name + "}}\",\"variables\":null,\"operationName\":null}"
     
     elif scalar == 'DateTime':
-        query = "{\"query\":\"query{"+field_name+ "(" +arg_name +":"+ genDateTime() + "){" + arg_name + "}}\",\"variables\":null,\"operationName\":null}"
+        query = "{\"query\":\"query{"+field_name+ "(" +arg_name +":"+ str(genDateTime()) + "){" + arg_name + "}}\",\"variables\":null,\"operationName\":null}"
     
     elif scalar == 'EmailAddress':
         query = "{\"query\":\"query{"+field_name+ "(" +arg_name +":"+ genEmail() + "){" + arg_name + "}}\",\"variables\":null,\"operationName\":null}"
@@ -316,7 +318,7 @@ def genFuzzyDateInt(size=8, chars=string.digits):
 
 
 @click.pass_context
-def writeFile(ctx, kind, scalar, name, data):
+def writeFile(ctx, kind, scalar, name, data, suffix=0):
     parentDir = ctx.obj['outdir']+"%s/" % kind
 
     try:
@@ -325,8 +327,12 @@ def writeFile(ctx, kind, scalar, name, data):
         if e.errno != errno.EEXIST:
             raise
 
-    with open(parentDir+name+'-'+scalar+".json","x+") as file:
-        file.write(data)
+    try:
+        outpath = parentDir+name+'-'+scalar+".json" if not suffix else parentDir+name+'-'+scalar+str(suffix)+".json"
+        with open(outpath, "x+") as file:
+            file.write(data)
+    except FileExistsError as e:
+        writeFile(kind, scalar, name, data, suffix + 1)
 
     click.secho('| Request written to: '+kind+'/'+name+'-'+scalar+'.json', fg='green')
     return True
