@@ -101,12 +101,12 @@ def scan(ctx, url, proxies):
 
                 if r.status_code == 200:
                     liveconsoles.append(get_endpoint)
-                elif r.status_code != 200:
+                # elif r.status_code != 200:
                     # click.secho('| BAD RESPONSE.. TRYING POST REQUEST', fg='red')
-                    with open('requests/probe/introspection-post.txt', 'r') as postdata:
-                        pr = requests.post(get_endpoint, proxies=proxies, headers=headers, verify=False, data=postdata)
-                        if pr.status_code == 200:
-                            gqlendpoints.append(get_endpoint)
+                with open('requests/probe/introspection-post.txt', 'r') as postdata:
+                    pr = requests.post(get_endpoint, proxies=proxies, headers=headers, verify=False, data=postdata)
+                    if pr.status_code == 200:
+                        gqlendpoints.append(get_endpoint)
 
     if len(liveconsoles) > 0:
         for item in liveconsoles:
@@ -117,7 +117,7 @@ def scan(ctx, url, proxies):
         # for endp in gqlendpoints:
         endp = gqlendpoints[0]
         click.secho('| POSSIBLE POST ENDPOINT LOCATED AT: '+endp, fg='green')
-        click.secho('[INFO] TESTING FOR INTROSPECTION', fg='yellow')
+        click.secho('[INFO] TESTING FOR INTROSPECTION USING POST METHOD', fg='yellow')
         
         with open('requests/probe/introspection-post.txt', 'r') as postdata:
             pr = requests.post(endp, proxies=proxies, headers=headers, verify=False, data=postdata)
@@ -139,14 +139,27 @@ def scan(ctx, url, proxies):
 
     
 
+def validateJSON(jsonData):
+    try:
+        json.loads(jsonData)
+    except ValueError as err:
+        return False
+    return True
+    
 @click.pass_context    
 def parseIntroResp(ctx):
+    click.secho('[INFO] ATTEMPTING TO PARSE INTROSPECTION QUERY RESPONSE', fg='yellow')
+
     outdir = os.path.dirname(os.path.realpath(__file__))+"/OUTPUT/%s/" % (str(datetime.now().strftime('%Y_%m_%d_%H_%M_%S')))
     os.makedirs(outdir, exist_ok=True)
     ctx.obj['outdir'] = outdir
 
     with open(ctx.obj['irespfile'], "r") as introFile:
         data = introFile.read()
+
+        if validateJSON(data) is False:
+            click.secho('[FAIL]\nINTROSPECTION PARSE NOT SUCCESSFUL DUE TO INVALID JSON IN RESPONSE\nMANUALLY INSPECT THE RESPONSE BODY TO DEBUG\nIT IS LIKELY THAT INTROSPECTION QUERIES ARE DISABLED', fg='red')
+            exit()
         schema = json.loads(data)
 
         if schema['data']['__schema']['types'] is not None:
