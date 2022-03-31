@@ -1,0 +1,8 @@
+version: '3.9'
+services:
+  shifter:
+    build: ./
+    volumes:
+      - ./shapeshifter:/opt/shapeshifter
+      - ./shapeshifter/responses:/opt/shapeshifter/responses
+    command: scan -u
